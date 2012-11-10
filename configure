@@ -3085,4 +3085,16 @@ echo "Version:$version"				>> gpac.pc
 echo "Cflags: -I\${prefix}/include/gpac"	>> gpac.pc
 echo "Libs: -L\${libdir} -lgpac"		>> gpac.pc
 
+#generate the export definition file.
+if test "$win32" = "yes" ; then
+    def_out="${source_path}/src/def_out.c"
+    grep '#include.*' ${source_path}/src/export.cpp > $def_out
+    echo "int main(int argc,char **argv){ if (argc<2) return -1; FILE *def = fopen(argv[1],\"wt\"); if (!def) return -1; fprintf(def,\"EXPORTS\n\");" >> $def_out
+    sed -e 's/#include.*//' -e 's/#pragma comment (linker, EXPORT_SYMBOL(/fprintf(def,"    /' -e 's/) )/\\n");/' -e 's/))/\\n");/' ${source_path}/src/export.cpp >> $def_out
+    echo "fclose(def);return 0;}" >> $def_out
+    $cc -o def_out $def_out -DGPAC_HAVE_CONFIG_H -I.
+    def_out "./bin/gcc/libgpac.def"
+    rm -f $def_out def_out*
+fi
+
 echo "Done - type 'make help' for make info, 'make' to build"
